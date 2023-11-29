@@ -8,20 +8,21 @@ struct Sensor
 {
   int trigPin;
   int echoPin;
+  int speakerPin;
   int distance;
+  bool objectDetected;
   String location;
 };
 
 // 센서 개수와 센서 객체 배열
 #define SENSOR_COUNT 4
 Sensor sensors[SENSOR_COUNT] = {
-    {2, 3, 0, "출입문"},
-    {4, 5, 0, "창문"},
-    {6, 7, 0, "복도"},
-    {8, 9, 0, "창고"}};
+    {2, 3, 11, 0, false, "출입문"},
+    {4, 5, 12, 0, false, "창문"},
+    {6, 7, 13, 0, false, "복도"},
+    {8, 9, 14, 0, false, "창고"}};
 
 #define ledPin 10
-#define speakerPin 11
 #define ALARM_COUNT 5
 #define DETECT_DISTANCE 10
 #define DELAY_TIME 500
@@ -38,8 +39,8 @@ String password = getWifiPassWord();
 String botToken = getToken();
 String chatID = getChatID();
 
-//감지 후 사용자에게 보낼 메시지
-String message = "비정상적인 움직임이 감지됨. 확인해주세요.";
+// 감지 후 사용자에게 보낼 메시지
+String message = "에서 비정상적인 움직임이 감지됨. 확인해주세요.";
 
 void setup()
 {
@@ -47,10 +48,10 @@ void setup()
   {
     pinMode(sensors[i].trigPin, OUTPUT);
     pinMode(sensors[i].echoPin, INPUT);
+    pinMode(sensors[i].speakerPin, OUTPUT);
   }
 
   pinMode(ledPin, OUTPUT);
-  pinMode(speakerPin, OUTPUT);
 
   // WiFi 연결
   WiFi.begin(ssid.c_str(), password.c_str());
@@ -68,46 +69,40 @@ void loop()
     readSensor(sensors[i]);
   }
 
+  // 객체가 감지되었는지 판단
   bool objectDetectedNow = false;
+  String detectedLocation = "";
+
   for (int i = 0; i < SENSOR_COUNT; ++i)
   {
-    if (sensors[i].distance < DETECT_DISTANCE)
+    if (sensors[i].objectDetected)
     {
       objectDetectedNow = true;
+      detectedLocation = sensors[i].location;
       break;
     }
   }
 
+  // 객체가 감지되었을 때 텔레그램 메시지 전송
   if (objectDetectedNow && !objectDetected)
   {
     objectDetected = true;
-    alarmCount = 0;
+
+    String finalMessage = detectedLocation + message;
 
     // 텔레그램 메시지 전송
     if (WiFi.status() == WL_CONNECTED)
     {
       HTTPClient http;
-      http.begin(client, "http://api.telegram.org/bot" + botToken + "/sendMessage?chat_id=" + chatID + "&text=" + urlEncode(message));
+      http.begin(client, "http://api.telegram.org/bot" + botToken + "/sendMessage?chat_id=" + chatID + "&text=" + urlEncode(finalMessage));
       http.GET();
       http.end();
     }
   }
 
-  if (objectDetected && alarmCount < ALARM_COUNT)
+  // 객체 감지 상태 리셋
+  if (!objectDetectedNow)
   {
-    digitalWrite(ledPin, HIGH);
-    tone(speakerPin, ALARM_FREQUENCY); // 1000 Hz의 사운드 출력
-    delay(DELAY_TIME);
-    digitalWrite(ledPin, LOW);
-    noTone(speakerPin);
-    delay(DELAY_TIME);
-    alarmCount++;
-  }
-
-  if (!objectDetectedNow || alarmCount >= ALARM_COUNT)
-  {
-    digitalWrite(ledPin, LOW);
-    noTone(speakerPin);
     objectDetected = false;
   }
 }
@@ -150,4 +145,21 @@ void readSensor(Sensor &sensor)
   digitalWrite(sensor.trigPin, LOW);
   long duration = pulseIn(sensor.echoPin, HIGH);
   sensor.distance = (duration / 2) / 29.1;
+
+  if (sensor.distance < DETECT_DISTANCE && !sensor.objectDetected)
+  {
+    sensor.objectDetected = true;
+    for (int i = 0; i < ALARM_COUNT; i++)
+    {
+      tone(sensor.speakerPin, ALARM_FREQUENCY);
+      delay(DELAY_TIME);
+      noTone(sensor.speakerPin);
+      delay(DELAY_TIME);
+    }
+  }
+
+  if (sensor.distance >= DETECT_DISTANCE)
+  {
+    sensor.objectDetected = false;
+  }
 }
