@@ -1,24 +1,152 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <UniversalTelegramBot.h>
 
-String telegram_bot_token = getenv("TELEGRAM_BOT_TOKEN");
-String telegram_chat_id = getenv("TELEGRAM_CHAT_ID");
+// 센서 관련 구조체
+struct Sensor
+{
+  int trigPin;
+  int echoPin;
+  int distance;
+  String location;
+};
 
-// put function declarations here:
-int myFunction(int, int);
+// 센서 개수와 센서 객체 배열
+#define SENSOR_COUNT 4
+Sensor sensors[SENSOR_COUNT] = {
+    {2, 3, 0, "출입문"},
+    {4, 5, 0, "창문"},
+    {6, 7, 0, "복도"},
+    {8, 9, 0, "창고"}};
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+#define ledPin 10
+#define speakerPin 11
+#define ALARM_COUNT 5
+#define DETECT_DISTANCE 10
+#define DELAY_TIME 500
+#define ALARM_FREQUENCY 1000
+
+bool objectDetected = false; // 물체 감지 여부
+int alarmCount = 0;          // 알람이 울린 횟수
+
+WiFiClient client;
+
+// 환경 변수에서 WiFi와 텔레그램 정보 읽기
+String ssid = getenv("WIFI_SSID");
+String password = getenv("WIFI_PASSWORD");
+String botToken = getenv("TELEGRAM_BOT_TOKEN");
+String chatID = getenv("TELEGRAM_CHAT_ID");
+
+//감지 후 사용자에게 보낼 메시지
+String message = "비정상적인 움직임이 감지됨. 확인해주세요.";
+
+void setup()
+{
+  for (int i = 0; i < SENSOR_COUNT; ++i)
+  {
+    pinMode(sensors[i].trigPin, OUTPUT);
+    pinMode(sensors[i].echoPin, INPUT);
+  }
+
+  pinMode(ledPin, OUTPUT);
+  pinMode(speakerPin, OUTPUT);
+
+  // WiFi 연결
+  WiFi.begin(ssid.c_str(), password.c_str());
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+  }
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop()
+{
+  // 각 센서 읽기
+  for (int i = 0; i < SENSOR_COUNT; ++i)
+  {
+    readSensor(sensors[i]);
+  }
+
+  bool objectDetectedNow = false;
+  for (int i = 0; i < SENSOR_COUNT; ++i)
+  {
+    if (sensors[i].distance < DETECT_DISTANCE)
+    {
+      objectDetectedNow = true;
+      break;
+    }
+  }
+
+  if (objectDetectedNow && !objectDetected)
+  {
+    objectDetected = true;
+    alarmCount = 0;
+
+    // 텔레그램 메시지 전송
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      HTTPClient http;
+      http.begin(client, "http://api.telegram.org/bot" + botToken + "/sendMessage?chat_id=" + chatID + "&text=" + urlEncode(message));
+      http.GET();
+      http.end();
+    }
+  }
+
+  if (objectDetected && alarmCount < ALARM_COUNT)
+  {
+    digitalWrite(ledPin, HIGH);
+    tone(speakerPin, ALARM_FREQUENCY); // 1000 Hz의 사운드 출력
+    delay(DELAY_TIME);
+    digitalWrite(ledPin, LOW);
+    noTone(speakerPin);
+    delay(DELAY_TIME);
+    alarmCount++;
+  }
+
+  if (!objectDetectedNow || alarmCount >= ALARM_COUNT)
+  {
+    digitalWrite(ledPin, LOW);
+    noTone(speakerPin);
+    objectDetected = false;
+  }
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+String urlEncode(const String &str)
+{
+  String encodedStr = "";
+  char c;
+
+  for (int i = 0; i < str.length(); i++)
+  {
+    c = str.charAt(i);
+
+    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '*')
+    {
+      encodedStr += c;
+    }
+    else if (c == ' ')
+    {
+      encodedStr += '+';
+    }
+    else
+    {
+      encodedStr += '%';
+      encodedStr += String((c >> 4) & 0xF, 16);
+      encodedStr += String(c & 0xF, 16);
+    }
+  }
+
+  return encodedStr;
+}
+
+// 센서 읽기 함수
+long readSensor(Sensor &sensor)
+{
+  digitalWrite(sensor.trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(sensor.trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(sensor.trigPin, LOW);
+  long duration = pulseIn(sensor.echoPin, HIGH);
+  sensor.distance = (duration / 2) / 29.1;
 }
