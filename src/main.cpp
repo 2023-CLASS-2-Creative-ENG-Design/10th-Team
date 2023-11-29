@@ -8,6 +8,7 @@ struct Sensor
 {
   int trigPin;
   int echoPin;
+  int ledPin;
   int speakerPin;
   int distance;
   bool objectDetected;
@@ -17,12 +18,11 @@ struct Sensor
 // 센서 개수와 센서 객체 배열
 #define SENSOR_COUNT 4
 Sensor sensors[SENSOR_COUNT] = {
-    {2, 3, 11, 0, false, "출입문"},
-    {4, 5, 12, 0, false, "창문"},
-    {6, 7, 13, 0, false, "복도"},
-    {8, 9, 14, 0, false, "창고"}};
+    {2, 3, 10, 14, 0, false, "출입문"},
+    {4, 5, 11, 15, 0, false, "창문"},
+    {6, 7, 12, 16, 0, false, "복도"},
+    {8, 9, 13, 17, 0, false, "창고"}};
 
-#define ledPin 10
 #define ALARM_COUNT 5
 #define DETECT_DISTANCE 10
 #define DELAY_TIME 500
@@ -48,10 +48,9 @@ void setup()
   {
     pinMode(sensors[i].trigPin, OUTPUT);
     pinMode(sensors[i].echoPin, INPUT);
+    pinMode(sensors[i].ledPin, OUTPUT);
     pinMode(sensors[i].speakerPin, OUTPUT);
   }
-
-  pinMode(ledPin, OUTPUT);
 
   // WiFi 연결
   WiFi.begin(ssid.c_str(), password.c_str());
