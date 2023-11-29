@@ -3,6 +3,9 @@
 #include <ESP8266HTTPClient.h>
 #include <UniversalTelegramBot.h>
 
+String telegram_bot_token = getenv("TELEGRAM_BOT_TOKEN");
+String telegram_chat_id = getenv("TELEGRAM_CHAT_ID");
+
 // put function declarations here:
 int myFunction(int, int);
 
