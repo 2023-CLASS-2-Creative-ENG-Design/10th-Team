@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <../Secrets.h>
 
 // 센서 관련 구조체
 struct Sensor
@@ -31,11 +32,11 @@ int alarmCount = 0;          // 알람이 울린 횟수
 
 WiFiClient client;
 
-// 환경 변수에서 WiFi와 텔레그램 정보 읽기
-String ssid = getenv("WIFI_SSID");
-String password = getenv("WIFI_PASSWORD");
-String botToken = getenv("TELEGRAM_BOT_TOKEN");
-String chatID = getenv("TELEGRAM_CHAT_ID");
+// 헤더 파일에서 WiFi와 텔레그램 정보 읽기
+String ssid = getWifiSSID();
+String password = getWifiPassWord();
+String botToken = getToken();
+String chatID = getChatID();
 
 //감지 후 사용자에게 보낼 메시지
 String message = "비정상적인 움직임이 감지됨. 확인해주세요.";
@@ -140,7 +141,7 @@ String urlEncode(const String &str)
 }
 
 // 센서 읽기 함수
-long readSensor(Sensor &sensor)
+void readSensor(Sensor &sensor)
 {
   digitalWrite(sensor.trigPin, LOW);
   delayMicroseconds(2);
