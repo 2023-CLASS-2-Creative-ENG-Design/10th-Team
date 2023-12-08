@@ -1,6 +1,6 @@
-<picture>
-   <img width="750" alt="logo" src="history/logo.png">
-</picture>
+<p align="center">
+<img src="history/logo.png">
+</p>
 
 안전은 모두에게 보장되어야 할 기본적인 권리입니다. 그러나 우리가 잠시나마 자리를 비울 때마다,  
 그 안전은 늘 위협 받을 수 있습니다. 이러한 문제를 해결하고자, '찾아라 내 도도독' 프로젝트를 시작하게 되었습니다.  
