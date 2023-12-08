@@ -1,5 +1,5 @@
 <picture>
-   <img width="750" alt="logo" src="https://github.com/2023-CLASS-2-Creative-ENG-Design/10th-Team/assets/95516455/9f07127e-9b34-47e1-aadd-482eba870cdb">
+   <img width="750" alt="logo" src="history/logo.png">
 </picture>
 
 안전은 모두에게 보장되어야 할 기본적인 권리입니다. 그러나 우리가 잠시나마 자리를 비울 때마다,  
