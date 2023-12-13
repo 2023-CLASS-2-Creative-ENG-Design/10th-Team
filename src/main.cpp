@@ -4,22 +4,27 @@
 #include <../Secrets.h>
 #include <NewPing.h>
 
-#define MAX_DISTANCE 10
+#define MAX_DISTANCE 20
+#define BUZZER_PIN 5
+#define MAX_ALARM_COUNT 5
+#define ALARM_RESET_INTERVAL 3000
 
 struct SensorLocation {
   NewPing sensor;
   String location;
 };
 
-// Define sensor and location pairs
 SensorLocation sensorLocations[] = {
-  {NewPing(12, 13, MAX_DISTANCE), "창고"}, // (trigger_pin, echo_pin, maximum_distance)
-  {NewPing(16, 17, MAX_DISTANCE), "복도"},
+  {NewPing(16, 17, MAX_DISTANCE), "정문"}, // (trigger_pin, echo_pin, maximum_distance)
   {NewPing(18, 19, MAX_DISTANCE), "창문"},
-  {NewPing(26, 27, MAX_DISTANCE), "현관문"}
+  {NewPing(26, 27, MAX_DISTANCE), "후문"}
 };
 
+int alarmCount = 0;
+unsigned long lastAlarmTime = 0;
+
 void sendTelegramNotification(String location);
+void soundAlarm();
 
 void setup() {
   Serial.begin(115200);
@@ -32,18 +37,30 @@ void setup() {
   }
 
   Serial.println("Connected to WiFi");
+
+  pinMode(BUZZER_PIN, OUTPUT);
 }
 
 void loop() {
   if ((WiFi.status() == WL_CONNECTED)) {
+    unsigned long currentTime = millis();
 
-    for (int i = 0; i < 4; i++) {
-      delay(50); // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
+    if (currentTime - lastAlarmTime >= ALARM_RESET_INTERVAL) {
+      alarmCount = 0;
+    }
 
-      unsigned int uS = sensorLocations[i].sensor.ping(); // Send ping, get ping time in microseconds (uS).
+    for (int i = 0; i < 3; i++) {
+      delay(50); 
 
-      if (uS != NO_ECHO) { // if there's an echo
+      unsigned int uS = sensorLocations[i].sensor.ping();
+
+      if (uS != NO_ECHO) {
         sendTelegramNotification(sensorLocations[i].location);
+        if (alarmCount < MAX_ALARM_COUNT) {
+          soundAlarm();
+          alarmCount++;
+          lastAlarmTime = currentTime;
+        }
       }
     }
   }
@@ -72,4 +89,13 @@ void sendTelegramNotification(String location) {
   }
 
   http.end(); // HTTP 연결 종료
+}
+
+void soundAlarm() {
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(1000);                   
+    digitalWrite(BUZZER_PIN, LOW); 
+    delay(1000);                   
+  }
 }
