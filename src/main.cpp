@@ -4,6 +4,7 @@
 #include <../Secrets.h>
 #include <NewPing.h>
 
+#define NUMBER_OF_SENSOR 3
 #define MAX_DISTANCE 20
 #define BUZZER_PIN 5
 #define MAX_ALARM_COUNT 5
@@ -49,7 +50,7 @@ void loop() {
       alarmCount = 0;
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < NUMBER_OF_SENSOR; i++) {
       delay(50); 
 
       unsigned int uS = sensorLocations[i].sensor.ping();
@@ -92,9 +93,9 @@ void sendTelegramNotification(String location) {
 }
 
 void soundAlarm() {
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) { // 3번 반복
     digitalWrite(BUZZER_PIN, HIGH);
-    delay(1000);                   
+    delay(1000);                   // 1초 대기
     digitalWrite(BUZZER_PIN, LOW); 
     delay(1000);                   
   }
