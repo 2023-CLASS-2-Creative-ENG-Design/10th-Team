@@ -65,7 +65,7 @@ SensorLocation sensorLocations[] = {
 
 void loop() {
   if ((WiFi.status() == WL_CONNECTED)) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 3; i++) {
       unsigned int uS = sensorLocations[i].sensor.ping();
       if (uS != NO_ECHO) {
         sendTelegramNotification(sensorLocations[i].location);
