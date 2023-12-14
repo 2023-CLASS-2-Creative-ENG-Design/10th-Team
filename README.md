@@ -29,7 +29,8 @@
 
 ## How it works
 
-NewPing 라이브러리를 사용하여 초음파 센서를 제어합니다. 센서는 핑을 보내고, 에코(즉, 객체로부터의 핑 반사)를 감지하면 알림을 트리거합니다. 알림은 Telegram API를 사용하여 정의된 Telegram 계정으로 메시지를 보냅니다.
+NewPing 라이브러리를 사용하여 초음파 센서를 제어합니다. 센서는 핑을 보내고, 에코(즉, 객체로부터의 핑 반사)를 감지하면 알림을 트리거합니다. 알림은 Telegram API를 사용하여 정의된 Telegram 계정으로 메시지를 보냅니다.  
+![showing](history/showing.gif)
 
 ## Tech Stacks
 
